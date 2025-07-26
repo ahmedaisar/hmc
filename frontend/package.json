@@ -38,7 +38,9 @@
     "next-intl": "^3.3.2",
     "sharp": "^0.33.1",
     "embla-carousel-react": "^8.0.0-rc19",
-    "react-intersection-observer": "^9.5.3"
+    "react-intersection-observer": "^9.5.3",
+    "@radix-ui/react-slot": "*",
+    "class-variance-authority": "*",
   },
   "devDependencies": {
     "@types/node": "^20.10.5",
