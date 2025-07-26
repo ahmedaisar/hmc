@@ -49,6 +49,7 @@
     "@types/react-dom": "^18.2.18",
     "@types/react-datepicker": "^4.19.4",
     "@tailwindcss/forms": "*",
+    "@tailwindcss/typography": "*",
     "typescript": "^5.3.3",
     "tailwindcss": "^3.3.6",
     "postcss": "^8.4.32",
