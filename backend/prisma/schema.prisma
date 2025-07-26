@@ -1,0 +1,580 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model with role-based access
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  password    String
+  firstName   String
+  lastName    String
+  phone       String?
+  avatar      String?
+  role        UserRole @default(GUEST)
+  isActive    Boolean  @default(true)
+  isVerified  Boolean  @default(false)
+  lastLogin   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  bookings       Booking[]
+  reviews        Review[]
+  managedHotels  Hotel[]   @relation("HotelManager")
+  refreshTokens  RefreshToken[]
+  notifications  Notification[]
+
+  @@map("users")
+}
+
+// Refresh tokens for JWT authentication
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+// Hotel/Resort model
+model Hotel {
+  id            String      @id @default(cuid())
+  name          String
+  slug          String      @unique
+  description   String
+  shortDesc     String?
+  email         String
+  phone         String
+  website       String?
+  
+  // Location details
+  island        String
+  atoll         String
+  coordinates   Json? // {lat: number, lng: number}
+  
+  // Hotel details
+  category      HotelCategory
+  starRating    Int         @default(5)
+  totalRooms    Int
+  checkInTime   String      @default("14:00")
+  checkOutTime  String      @default("12:00")
+  
+  // Media
+  images        Json        // Array of image URLs
+  videos        Json?       // Array of video URLs
+  
+  // Amenities and features
+  amenities     Json        // Array of amenity objects
+  facilities    Json?       // Array of facility objects
+  activities    Json?       // Array of activity objects
+  
+  // Policies
+  policies      Json?       // Hotel policies object
+  
+  // Status and management
+  isActive      Boolean     @default(true)
+  isApproved    Boolean     @default(false)
+  managerId     String?
+  
+  // SEO
+  metaTitle     String?
+  metaDesc      String?
+  keywords      Json?       // Array of keywords
+  
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  // Relations
+  manager       User?       @relation("HotelManager", fields: [managerId], references: [id])
+  rooms         Room[]
+  bookings      Booking[]
+  reviews       Review[]
+  availability  Availability[]
+  promotions    Promotion[]
+  content       HotelContent[]
+
+  @@map("hotels")
+}
+
+// Room types and configurations
+model Room {
+  id            String      @id @default(cuid())
+  hotelId       String
+  name          String
+  slug          String
+  description   String
+  shortDesc     String?
+  
+  // Room details
+  type          RoomType
+  capacity      Int         // Max occupancy
+  bedType       String      // King, Queen, Twin, etc.
+  size          Float?      // Room size in sqm
+  view          String?     // Ocean, Garden, etc.
+  
+  // Pricing
+  basePrice     Float       // Base price per night
+  currency      String      @default("USD")
+  
+  // Media
+  images        Json        // Array of image URLs
+  
+  // Amenities
+  amenities     Json        // Room-specific amenities
+  
+  // Inventory
+  totalUnits    Int         // Number of this room type
+  
+  isActive      Boolean     @default(true)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  // Relations
+  hotel         Hotel       @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  bookings      BookingRoom[]
+  availability  Availability[]
+  ratePlans     RatePlan[]
+
+  @@unique([hotelId, slug])
+  @@map("rooms")
+}
+
+// Rate plans for dynamic pricing
+model RatePlan {
+  id          String      @id @default(cuid())
+  roomId      String
+  name        String
+  description String?
+  
+  // Pricing rules
+  basePrice   Float
+  currency    String      @default("USD")
+  
+  // Date range
+  startDate   DateTime
+  endDate     DateTime
+  
+  // Booking rules
+  minStay     Int         @default(1)
+  maxStay     Int?
+  advanceBooking Int?     // Days in advance
+  
+  // Discounts and markups
+  discount    Float?      // Percentage discount
+  markup      Float?      // Percentage markup
+  
+  // Conditions
+  conditions  Json?       // Booking conditions
+  
+  isActive    Boolean     @default(true)
+  priority    Int         @default(0) // Higher priority overrides lower
+  
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  room        Room        @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@map("rate_plans")
+}
+
+// Availability calendar
+model Availability {
+  id        String   @id @default(cuid())
+  hotelId   String
+  roomId    String
+  date      DateTime @db.Date
+  available Int      // Number of rooms available
+  price     Float    // Price for this date
+  currency  String   @default("USD")
+  
+  // Restrictions
+  minStay   Int?     // Minimum stay for this date
+  maxStay   Int?     // Maximum stay for this date
+  
+  // Status
+  isBlocked Boolean  @default(false)
+  reason    String?  // Reason for blocking
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  hotel     Hotel    @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@unique([hotelId, roomId, date])
+  @@map("availability")
+}
+
+// Booking model
+model Booking {
+  id              String        @id @default(cuid())
+  bookingNumber   String        @unique
+  userId          String
+  hotelId         String
+  
+  // Guest details
+  guestFirstName  String
+  guestLastName   String
+  guestEmail      String
+  guestPhone      String
+  
+  // Booking details
+  checkIn         DateTime      @db.Date
+  checkOut        DateTime      @db.Date
+  nights          Int
+  adults          Int
+  children        Int           @default(0)
+  infants         Int           @default(0)
+  
+  // Pricing
+  subtotal        Float
+  taxes           Float         @default(0)
+  fees            Float         @default(0)
+  discount        Float         @default(0)
+  total           Float
+  currency        String        @default("USD")
+  
+  // Payment
+  paymentStatus   PaymentStatus @default(PENDING)
+  paymentMethod   String?
+  stripePaymentId String?
+  
+  // Status
+  status          BookingStatus @default(PENDING)
+  
+  // Special requests
+  specialRequests String?
+  notes           String?
+  
+  // Cancellation
+  cancellationReason String?
+  cancelledAt     DateTime?
+  refundAmount    Float?
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  user            User          @relation(fields: [userId], references: [id])
+  hotel           Hotel         @relation(fields: [hotelId], references: [id])
+  rooms           BookingRoom[]
+  payments        Payment[]
+  notifications   Notification[]
+
+  @@map("bookings")
+}
+
+// Junction table for booking rooms
+model BookingRoom {
+  id        String   @id @default(cuid())
+  bookingId String
+  roomId    String
+  quantity  Int      @default(1)
+  price     Float    // Price per night for this room
+  total     Float    // Total for this room (price * nights * quantity)
+  
+  createdAt DateTime @default(now())
+
+  // Relations
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  room      Room     @relation(fields: [roomId], references: [id])
+
+  @@unique([bookingId, roomId])
+  @@map("booking_rooms")
+}
+
+// Payment transactions
+model Payment {
+  id              String        @id @default(cuid())
+  bookingId       String
+  amount          Float
+  currency        String        @default("USD")
+  method          PaymentMethod
+  status          PaymentStatus @default(PENDING)
+  
+  // External payment details
+  stripePaymentId String?
+  paypalOrderId   String?
+  
+  // Transaction details
+  transactionId   String?
+  gatewayResponse Json?
+  
+  // Refund details
+  refundAmount    Float?
+  refundReason    String?
+  refundedAt      DateTime?
+  
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  booking         Booking       @relation(fields: [bookingId], references: [id])
+
+  @@map("payments")
+}
+
+// Reviews and ratings
+model Review {
+  id          String   @id @default(cuid())
+  userId      String
+  hotelId     String
+  
+  // Rating (1-5 stars)
+  overallRating    Float
+  cleanlinessRating Float?
+  serviceRating    Float?
+  locationRating   Float?
+  valueRating      Float?
+  
+  // Review content
+  title       String?
+  content     String
+  pros        String?
+  cons        String?
+  
+  // Media
+  images      Json?    // Array of image URLs
+  
+  // Verification
+  isVerified  Boolean  @default(false)
+  stayDate    DateTime? @db.Date
+  
+  // Moderation
+  isApproved  Boolean  @default(false)
+  moderatedBy String?
+  moderatedAt DateTime?
+  
+  // Helpful votes
+  helpfulVotes Int     @default(0)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  user        User     @relation(fields: [userId], references: [id])
+  hotel       Hotel    @relation(fields: [hotelId], references: [id])
+
+  @@map("reviews")
+}
+
+// Promotions and deals
+model Promotion {
+  id          String      @id @default(cuid())
+  hotelId     String?     // Null for site-wide promotions
+  title       String
+  description String
+  code        String?     @unique // Promo code
+  
+  // Discount details
+  discountType DiscountType
+  discountValue Float
+  maxDiscount  Float?     // Maximum discount amount
+  
+  // Validity
+  startDate   DateTime
+  endDate     DateTime
+  
+  // Usage limits
+  usageLimit  Int?        // Total usage limit
+  usageCount  Int         @default(0)
+  userLimit   Int?        // Per user limit
+  
+  // Conditions
+  minAmount   Float?      // Minimum booking amount
+  minNights   Int?        // Minimum nights
+  conditions  Json?       // Additional conditions
+  
+  // Targeting
+  targetRoles Json?       // Array of user roles
+  targetUsers Json?       // Array of user IDs
+  
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  hotel       Hotel?      @relation(fields: [hotelId], references: [id])
+
+  @@map("promotions")
+}
+
+// CMS Content management
+model Content {
+  id          String      @id @default(cuid())
+  type        ContentType
+  title       String
+  slug        String      @unique
+  content     String      // HTML content
+  excerpt     String?
+  
+  // Media
+  featuredImage String?
+  gallery     Json?       // Array of image URLs
+  
+  // SEO
+  metaTitle   String?
+  metaDesc    String?
+  keywords    Json?       // Array of keywords
+  
+  // Publishing
+  isPublished Boolean     @default(false)
+  publishedAt DateTime?
+  authorId    String?
+  
+  // Scheduling
+  scheduledAt DateTime?
+  expiresAt   DateTime?
+  
+  // Localization
+  language    String      @default("en")
+  
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@map("content")
+}
+
+// Hotel-specific content
+model HotelContent {
+  id        String      @id @default(cuid())
+  hotelId   String
+  type      ContentType
+  title     String
+  content   String
+  
+  // Media
+  images    Json?       // Array of image URLs
+  videos    Json?       // Array of video URLs
+  
+  // Ordering
+  order     Int         @default(0)
+  
+  isActive  Boolean     @default(true)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  // Relations
+  hotel     Hotel       @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@map("hotel_content")
+}
+
+// Notifications
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String?          // Null for system notifications
+  bookingId String?
+  type      NotificationType
+  title     String
+  message   String
+  data      Json?            // Additional data
+  
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+  
+  createdAt DateTime         @default(now())
+
+  // Relations
+  user      User?            @relation(fields: [userId], references: [id])
+  booking   Booking?         @relation(fields: [bookingId], references: [id])
+
+  @@map("notifications")
+}
+
+// Enums
+enum UserRole {
+  GUEST
+  HOTEL_MANAGER
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum HotelCategory {
+  LUXURY_RESORT
+  BOUTIQUE_HOTEL
+  OVERWATER_VILLA
+  BEACH_RESORT
+  ECO_RESORT
+  BUDGET_HOTEL
+}
+
+enum RoomType {
+  BEACH_VILLA
+  OVERWATER_VILLA
+  GARDEN_VILLA
+  SUITE
+  STANDARD_ROOM
+  FAMILY_ROOM
+  PRESIDENTIAL_SUITE
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CHECKED_IN
+  CHECKED_OUT
+  CANCELLED
+  NO_SHOW
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum PaymentMethod {
+  STRIPE
+  PAYPAL
+  BANK_TRANSFER
+  CASH
+  BML
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+  FREE_NIGHTS
+}
+
+enum ContentType {
+  PAGE
+  BLOG_POST
+  GUIDE
+  PROMOTION
+  BANNER
+  GALLERY
+  ACTIVITY
+  DINING
+  SPA
+}
+
+enum NotificationType {
+  BOOKING_CONFIRMATION
+  BOOKING_CANCELLATION
+  PAYMENT_SUCCESS
+  PAYMENT_FAILED
+  CHECK_IN_REMINDER
+  REVIEW_REQUEST
+  PROMOTION
+  SYSTEM
+}
