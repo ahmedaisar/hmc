@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { apiClient } from '@/lib/api';
+import { apiClient, ApiResponse } from '@/lib/api';
 import { toast } from 'react-hot-toast';
 
 // Types

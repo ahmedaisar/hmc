@@ -2,6 +2,8 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { toast } from 'react-hot-toast';
 import type { Hotel } from '@/types';
 
+import { User } from '@/types';
+
 // Types
 export interface ApiResponse<T = any> {
   data?: T;
@@ -12,6 +14,11 @@ export interface ApiResponse<T = any> {
     limit: number;
     total: number;
     pages: number;
+  };
+  user?: User;
+  tokens?: {
+    accessToken: string;
+    refreshToken: string;
   };
 }
 

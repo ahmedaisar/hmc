@@ -401,17 +401,7 @@ export interface AvailabilitySearch {
 }
 
 // API Response types
-export interface ApiResponse<T = any> {
-  data?: T;
-  message?: string;
-  error?: string;
-  pagination?: {
-    page: number;
-    limit: number;
-    total: number;
-    pages: number;
-  };
-}
+
 
 export interface PaginatedResponse<T> {
   data: T[];
