@@ -31,10 +31,18 @@ export interface ApiError {
 
 // Create axios instance
 const createApiInstance = (): AxiosInstance => {
-  const baseURL = process.env.NEXT_PUBLIC_API_URL || 
-    (typeof window !== 'undefined' && window.location.hostname === 'localhost' 
-      ? 'http://localhost:3001/api' 
-      : '/api');
+    let baseURL = process.env.NEXT_PUBLIC_API_URL;
+
+  if (!baseURL) {
+    if (typeof window !== 'undefined') {
+      baseURL = window.location.hostname === 'localhost' ? 'http://localhost:3001/api' : '/api';
+    } else {
+      // Fallback for server-side if NEXT_PUBLIC_API_URL is not set
+      // This should ideally be configured via environment variables in Vercel
+      // For local development, you might want a specific default here
+      baseURL = 'http://localhost:3001/api'; 
+    }
+  }
       
   const instance = axios.create({
     baseURL,

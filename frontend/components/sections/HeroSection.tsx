@@ -39,7 +39,11 @@ export function HeroSection() {
 
           {/* Search CTA */}
           <div className="animate-slide-up" style={{ animationDelay: '0.2s' }}>
-            {!showSearchForm ? (
+            {showSearchForm ? (
+              <div className="bg-white/95 backdrop-blur-md rounded-2xl p-6 shadow-2xl max-w-4xl mx-auto">
+                <SearchForm onClose={() => setShowSearchForm(false)} />
+              </div>
+            ) : (
               <Button
                 size="lg"
                 onClick={() => setShowSearchForm(true)}
@@ -48,10 +52,6 @@ export function HeroSection() {
                 <Search className="w-5 h-5 mr-2" />
                 Find Your Perfect Resort
               </Button>
-            ) : (
-              <div className="bg-white/95 backdrop-blur-md rounded-2xl p-6 shadow-2xl max-w-4xl mx-auto">
-                <SearchForm onClose={() => setShowSearchForm(false)} />
-              </div>
             )}
           </div>
 
