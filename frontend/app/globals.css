@@ -53,7 +53,7 @@
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: hsl(var(--border));
   }
   
   body {
@@ -86,7 +86,9 @@
 @layer components {
   /* Button variants */
   .btn {
-    @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background;
+    @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 disabled:opacity-50 disabled:pointer-events-none;
+    focus-visible:ring-color: hsl(var(--ring));
+    focus-visible:ring-offset-color: hsl(var(--background));
   }
 
   .btn-primary {
@@ -98,7 +100,8 @@
   }
 
   .btn-outline {
-    @apply border border-input hover:bg-accent hover:text-accent-foreground;
+    @apply border hover:bg-accent hover:text-accent-foreground;
+    border-color: hsl(var(--input));
   }
 
   .btn-ghost {
@@ -119,7 +122,9 @@
 
   /* Card component */
   .card {
-    @apply rounded-lg border bg-card text-card-foreground shadow-sm;
+    @apply rounded-lg border shadow-sm;
+    background-color: hsl(var(--card));
+    color: hsl(var(--card-foreground));
   }
 
   .card-header {
@@ -136,7 +141,14 @@
 
   /* Input styles */
   .input {
-    @apply flex h-10 w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply flex h-10 w-full rounded-md border bg-transparent px-3 py-2 text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-visible:outline-none focus-visible:ring-2 disabled:cursor-not-allowed disabled:opacity-50;
+    border-color: hsl(var(--input));
+    ring-offset-color: hsl(var(--background));
+    focus-visible:ring-color: hsl(var(--ring));
+  }
+  
+  .input::placeholder {
+    color: hsl(var(--muted-foreground));
   }
 
   /* Loading spinner */
