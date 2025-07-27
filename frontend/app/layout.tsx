@@ -94,7 +94,7 @@ export default function RootLayout({
     <html lang="en" className={`${inter.variable} ${playfair.variable}`} suppressHydrationWarning>
       <body className="min-h-screen bg-background font-sans antialiased">
         <Providers>
-          <div>
+          <div className="relative">
             {children}
             <Toaster
               position="top-right"
