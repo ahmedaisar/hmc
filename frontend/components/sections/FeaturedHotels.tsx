@@ -4,9 +4,10 @@ import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Star, MapPin, Wifi, Car, Utensils } from 'lucide-react';
-import { apiClient } from '@/lib/api';
+import { apiClient, ApiResponse } from '@/lib/api';
 import { formatCurrency } from '@/lib/utils';
 import { Button } from '@/components/ui/Button';
+import { Hotel } from '@/types';
 
 export function FeaturedHotels() {
   const { data, isLoading, error } = useQuery({
@@ -43,7 +44,7 @@ export function FeaturedHotels() {
     );
   }
 
-  if (error || !data?.hotels) {
+  if (error || !data?.data) {
     return (
       <section className="section bg-gray-50">
         <div className="container text-center">
@@ -72,7 +73,7 @@ export function FeaturedHotels() {
 
         {/* Hotels Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
-          {data.hotels.map((hotel: any) => (
+          {data.data.map((hotel: Hotel) => (
             <div
               key={hotel.id}
               className="bg-white rounded-2xl shadow-lg overflow-hidden hover-lift group"

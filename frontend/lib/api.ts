@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { toast } from 'react-hot-toast';
+import type { Hotel } from '@/types';
 
 // Types
 export interface ApiResponse<T = any> {
@@ -178,7 +179,7 @@ export const apiClient = {
 
   // Hotels methods
   hotels: {
-    getAll: (params?: any) => apiClient.get('/hotels', { params }),
+    getAll: (params?: any) => apiClient.get<Hotel[]>('/hotels', { params }),
     getById: (id: string) => apiClient.get(`/hotels/${id}`),
     create: (data: any) => apiClient.post('/hotels', data),
     update: (id: string, data: any) => apiClient.put(`/hotels/${id}`, data),
